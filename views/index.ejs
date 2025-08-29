@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Music Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+
+    .controls, .now-playing, .back-button {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .track-list, .queue-list {
+      width: 48%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .remove-btn, .enqueue-btn {
+      margin-left: 10px;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .remove-btn:hover, .enqueue-btn:hover {
+      background-color: #005f99;
+    }
+
+    .back-button button {
+      background-color: #aaa;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .back-button button:hover {
+      background-color: #888;
+    }
+    @keyframes pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+
+.playing-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #4caf50;
+  animation: pulse 1s infinite;
+  margin-left: 8px;
+}
+
+  </style>
+</head>
+<body>
+<script>
+document.getElementById('backBtn').onclick = async () => {
+  const res = await fetch('/go-back');
+  const result = await res.json();
+  // Refresh your UI with result.contents
+};
+</script>
+  <!-- 🔙 Back to Main Menu -->
+  <div class="back-button">
+    <form action="/" method="GET">
+      <button>⬅️ Back to Main Menu</button>
+    </form>
+  </div>
+
+  <!-- 🔧 Playback Controls -->
+<div class="controls">
+  <form action="/prev-track" method="POST" style="display:inline;">
+    <button>⏮️ Previous</button>
+  </form>
+  <form action="/toggle-pause" method="GET" style="display:inline;">
+    <button>⏯️ Pause/Resume</button>
+  </form>
+  <form action="/next-track" method="POST" style="display:inline;">
+    <button>⏭️ Next</button>
+  </form>
+</div>
+<div style="margin-top: 1em;">
+  <h3>🎚 Volume Control</h3>
+  <form action="/volume/up" method="POST" style="display: inline;">
+    <button type="submit">🔊 Volume +</button>
+  </form>
+  <form action="/volume/down" method="POST" style="display: inline;">
+    <button type="submit">🔉 Volume -</button>
+  </form>
+</div>
+<div class="playlist-controls">
+  <!-- Save Playlist Button -->
+  <button id="saveBtn">💾 Save Playlist</button>
+</div>
+
+<button id="openBtn">📂 Open Playlist</button>
+<form action="/play-queue" method="POST">
+  <button type="submit">▶️ Play Queue</button>
+</form>
+<script>
+document.getElementById('openBtn').onclick = async () => {
+  const name = prompt('Enter playlist name to load (without .json):');
+  if (name) {
+    const res = await fetch(`/load-playlist/${encodeURIComponent(name)}`);
+    const result = await res.json();
+    if (result.success) {
+      alert(`Loaded ${name} into queue!`);
+      // Refresh your queue UI here
+    } else {
+      alert(`Error: ${result.message}`);
+    }
+  }
+};
+</script>
+
+<script>
+document.getElementById('saveBtn').onclick = async () => {
+  const name = prompt('🎧 Enter a name for your playlist:');
+  if (name) {
+    const response = await fetch('/save-playlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+
+    const result = await response.json();
+    alert(result.message || 'Playlist saved!');
+  }
+};
+</script>
+
+
+  <!-- 🎶 Now Playing -->
+  <div class="now-playing">
+    <h3>Now Playing</h3>
+  <p>
+    <%= currentTrack.artist %> - <%= currentTrack.title %>
+    <% if (currentTrack.title !== 'No track playing') { %>
+      <span class="playing-indicator"></span>
+    <% } %>
+  </p>
+  <p><strong>CPU Temp:</strong> <%= tempOutput %></p>
+  <div class="error-area">
+  <% if (currentTrack.title !== 'No track playing' && typeof playbackError !== 'undefined') { %>
+    <p class="error-msg">⚠️ <%= playbackError %></p>
+  <% } %>
+</div>
+
+  <!-- 🗂️ Main Layout -->
+  <div class="main-layout">
+    <!-- 🎵 Browse Section -->
+    <div class="track-list">
+      <% if (isTrackView) { %>
+        <h3>Tracks</h3>
+        <button id="backBtn">⬅️ Back</button>
+        <ul>
+          <% entries.forEach(entry => { %>
+            <li>
+              <%= entry.name %>
+              <form action="/enqueue" method="GET" style="display:inline;">
+                <input type="hidden" name="file" value="<%= entry.relPath %>">
+                <button class="enqueue-btn">➕ Add to Queue</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <h3>Folders</h3>
+        <ul>
+          <% entries.forEach(entry => { %>
+            <li>
+              <a href="/music?dir=<%= encodeURIComponent(entry.relPath) %>">
+                📁 <%= entry.name %>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+
+    <!-- 📋 Playback Queue -->
+    <div class="queue-list">
+      <h3>Current Queue</h3>
+      <ul>
+        <% queue.forEach((track, index) => { %>
+          <li>
+            <%= track %>
+            <form action="/queue/remove/<%= index %>" method="POST" style="display:inline;">
+              <button class="remove-btn">🗑️ Remove</button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

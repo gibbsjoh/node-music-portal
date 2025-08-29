@@ -1,0 +1,55 @@
+<!-- views/system.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>System Controls</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #222;
+      color: white;
+    }
+    .btn {
+      display: block;
+      margin: 20px auto;
+      padding: 30px;
+      width: 80%;
+      font-size: 2em;
+      background: #c0392b;
+      border: none;
+      border-radius: 12px;
+      color: white;
+    }
+    .reboot {
+      background: #e67e22;
+    }
+    .btn.back {
+  background: #333;
+  margin-top: 30px;
+  padding: 20px;
+  font-size: 1.5em;
+  border-radius: 10px;
+  display: inline-block;
+  color: white;
+  text-decoration: none;
+}
+
+  </style>
+</head>
+<body>
+  <h1>🖥 System Controls</h1>
+  <form method="POST" action="/shutdown">
+    <button class="btn">🔌 Shutdown</button>
+  </form>
+  <form method="POST" action="/reboot">
+    <button class="btn reboot">🔁 Reboot</button>
+  </form>
+  <pre style="text-align: left; margin: 20px auto; width: 90%; background: #111; padding: 10px; border-radius: 8px; font-size: 0.9em;">
+  <%= neofetchOutput %>
+  <%= tempOutput %>
+</pre>
+  <a href="/menu" class="btn back">⬅️ Back to Menu</a>
+</body>
+</html>

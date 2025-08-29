@@ -1,0 +1,39 @@
+<!-- views/menu.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Music Portal Menu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #111;
+      color: white;
+    }
+    .btn {
+      display: block;
+      margin: 20px auto;
+      padding: 30px;
+      width: 80%;
+      font-size: 2em;
+      background: #1DB954;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      text-decoration: none;
+    }
+    .btn.system { background: #555; }
+  </style>
+</head>
+<body>
+  <h1>🎛 Music Portal</h1>
+  <a class="btn" href="/music">🎶 Music</a>
+  <li><a class="btn" href="/radio">Radio</a></li>
+  <a class="btn system" href="/system">🖥 System</a>
+    <div class="battery-status">
+  <strong>Power:</strong> <%= battery.powerStatus %> —
+  <strong>Voltage:</strong> <%= battery.volts.toFixed(2) %>V
+</div>
+</body>
+</html>

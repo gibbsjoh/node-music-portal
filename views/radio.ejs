@@ -1,0 +1,121 @@
+<!-- views/radio.ejs -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Radio Portal</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+
+    .controls, .now-playing, .back-button {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .track-list, .queue-list {
+      width: 48%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    .remove-btn, .enqueue-btn {
+      margin-left: 10px;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .remove-btn:hover, .enqueue-btn:hover {
+      background-color: #005f99;
+    }
+
+    .back-button button {
+      background-color: #aaa;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .back-button button:hover {
+      background-color: #888;
+    }
+    /* Increase button size for better touchscreen use */
+    button {
+      font-size: 1.2em;
+      padding: 12px 20px;
+      margin: 10px 5px;
+      border-radius: 8px;
+    }
+
+    /* Make list layout cleaner on small screens */
+    .station-list li {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    /* For control buttons (pause/resume) */
+    .control-buttons button {
+      font-size: 1.2em;
+      padding: 12px 20px;
+      margin: 0 10px;
+      border-radius: 8px;
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎙️ Radio Streaming</h1>
+    <nav>
+      <a href="/" class="nav-link">Home</a>
+    </nav>
+  </header>
+
+  <main class="content-box">
+    <section id="radio-player" class="controls">
+  <p id="player-status">Select a station to play</p>
+  <p><strong>Now Playing:</strong> <span id="current-station">None</span></p>
+
+  <div class="control-buttons">
+    <button id="pause-btn" disabled>⏸️ Pause</button>
+    <button id="resume-btn" disabled>▶️ Resume</button>
+  </div>
+</section>
+
+    <ul id="station-list" class="station-list">
+      <!-- Populated dynamically -->
+    </ul>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Music Portal</p>
+  </footer>
+
+  <script src="/js/radio.js"></script>
+</body>
+</html>
+
+
