@@ -10,7 +10,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = 3000;
-const MUSIC_DIR = '/home/dietpi/Music';
+const MUSIC_DIR = '/home/sysadmin/Music';
 
 // View engine and static files
 app.set('view engine', 'ejs');

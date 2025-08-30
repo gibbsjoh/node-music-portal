@@ -95,18 +95,6 @@ document.getElementById('backBtn').onclick = async () => {
     </form>
   </div>
 
-  <!-- 🔧 Playback Controls -->
-<div class="controls">
-  <form action="/prev-track" method="POST" style="display:inline;">
-    <button>⏮️ Previous</button>
-  </form>
-  <form action="/toggle-pause" method="GET" style="display:inline;">
-    <button>⏯️ Pause/Resume</button>
-  </form>
-  <form action="/next-track" method="POST" style="display:inline;">
-    <button>⏭️ Next</button>
-  </form>
-</div>
 <div style="margin-top: 1em;">
   <h3>🎚 Volume Control</h3>
   <form action="/volume/up" method="POST" style="display: inline;">
@@ -118,13 +106,12 @@ document.getElementById('backBtn').onclick = async () => {
 </div>
 <div class="playlist-controls">
   <!-- Save Playlist Button -->
-  <button id="saveBtn">💾 Save Playlist</button>
+  <!-- <button id="saveBtn">💾 Save Playlist</button>
+  <button id="openBtn">📂 Open Playlist</button>
+  <form action="/play-queue" method="POST">
+    <button type="submit">▶️ Play Queue</button>
+  </form> -->
 </div>
-
-<button id="openBtn">📂 Open Playlist</button>
-<form action="/play-queue" method="POST">
-  <button type="submit">▶️ Play Queue</button>
-</form>
 <script>
 document.getElementById('openBtn').onclick = async () => {
   const name = prompt('Enter playlist name to load (without .json):');
@@ -172,6 +159,23 @@ document.getElementById('saveBtn').onclick = async () => {
   <% if (currentTrack.title !== 'No track playing' && typeof playbackError !== 'undefined') { %>
     <p class="error-msg">⚠️ <%= playbackError %></p>
   <% } %>
+</div>
+  <!-- 🔧 Playback Controls -->
+<div class="controls">
+  <form action="/prev-track" method="POST" style="display:inline;">
+    <button>⏮️ Previous</button>
+  </form>
+  <form action="/toggle-pause" method="GET" style="display:inline;">
+    <button>⏯️ Pause/Resume</button>
+  </form>
+  <form action="/next-track" method="POST" style="display:inline;">
+    <button>⏭️ Next</button>
+  </form><br>
+  <button id="saveBtn">💾 Save Playlist</button>
+  <button id="openBtn">📂 Open Playlist</button>
+  <form action="/play-queue" method="POST">
+    <button type="submit">▶️ Play Queue</button>
+  </form>
 </div>
 
   <!-- 🗂️ Main Layout -->
