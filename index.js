@@ -1,21 +1,28 @@
-// Core dependencies
+// ********************************************** Dependencies ***************************************
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const https = require('https');
 require('dotenv').config();
+const session = require('express-session');
 
-// ****************************** CONSTANTS ETC ************************************
-
+// ********************************************** CONSTANTS ***************************************
+// ******* Configure Express ******
 const app = express();
 const PORT = 3000;
-const MUSIC_DIR = '/home/sysadmin/Music';
 
 // View engine and static files
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static('public'));
+app.use(express.json());
+
+app.use(session({
+  secret: 'yomama',
+  resave: false,
+  saveUninitialized: true
+}));
 
 // SSL config
 const sslOptions = {
@@ -23,7 +30,11 @@ const sslOptions = {
   cert: fs.readFileSync('server.cert')
 };
 
-// be able to query the Pi UPS using ina219-async
+// ******* Set music dir here! ******
+const MUSIC_DIR = '/home/pi/Music';
+
+
+// ******* WaveShare Pi UPS ******
 const Ina219Board = require('ina219-async');
 const ina219 = Ina219Board(i2cAddress = 0x43, i2cBus = 1);
 
@@ -60,31 +71,57 @@ async function getBatteryStatus() {
 }
 
 // 📁 File scanner
-function getDirectoryContents(relDir = '') {
+function getDirectoryView(relDir = '') {
   const dirPath = path.join(MUSIC_DIR, relDir);
-  let files = [];
-
-  function walk(dir) {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    entries.forEach(entry => {
-      const fullPath = path.join(dir, entry.name);
-      const relPath = path.relative(MUSIC_DIR, fullPath);
-      if (entry.isDirectory()) {
-        walk(fullPath);
-      } else if (entry.name.match(/\.(mp3|flac|m4a)$/)) {
-        files.push(relPath);
-      }
-    });
-  }
+  let entries = [];
 
   try {
-    walk(dirPath);
+    const dirEntries = fs.readdirSync(dirPath, { withFileTypes: true });
+    dirEntries.forEach(entry => {
+      const fullPath = path.join(dirPath, entry.name);
+      const relPath = path.relative(MUSIC_DIR, fullPath);
+      entries.push({
+        name: entry.name,
+        relPath,
+        isDirectory: entry.isDirectory(),
+        isAudio: entry.isFile() && entry.name.match(/\.(mp3|flac|m4a)$/)
+      });
+    });
   } catch (err) {
     console.error('Error reading directory:', err);
   }
 
-  return files;
+  return entries;
 }
+// old version:
+// function getDirectoryContents(relDir = '') {
+//   const dirPath = path.join(MUSIC_DIR, relDir);
+//   let files = [];
+
+//   function walk(dir) {
+//     const entries = fs.readdirSync(dir, { withFileTypes: true });
+//     entries.forEach(entry => {
+//       const fullPath = path.join(dir, entry.name);
+//       const relPath = path.relative(MUSIC_DIR, fullPath);
+//       if (entry.isDirectory()) {
+//         walk(fullPath);
+//       } else if (entry.name.match(/\.(mp3|flac|m4a)$/)) {
+//         files.push(relPath);
+//       }
+//     });
+//   }
+
+//   try {
+//     walk(dirPath);
+//   } catch (err) {
+//     console.error('Error reading directory:', err);
+//   }
+
+//   return files;
+// }
+
+
+
 // enqueue but don't play
 function enqueue(filePath) {
   console.log('Enqueueing:', filePath);
@@ -92,10 +129,40 @@ function enqueue(filePath) {
   // Playback starts only via manual Play trigger
 }
 
+function parseTrackMetadata(filename) {
+  const base = path.basename(filename, path.extname(filename)); // Remove extension
+  const parts = base.split(' - '); // Expecting format: Artist - Title
+
+  return {
+    artist: parts.length > 1 ? parts[0].trim() : '',
+    title: parts.length > 1 ? parts[1].trim() : base
+  };
+}
+
 // playNext - starts playback or goes to next track
+
+
+// function playNext() {
+//   if (playQueue.length === 0) {
+//     currentTrack = { title: 'No track playing', artist: '' };
+//     return;
+//   }
+
+//   const nextFile = playQueue.shift();
+//   const parsed = parseTrackMetadata(nextFile); // your logic here
+
+//   currentTrack = {
+//     title: parsed.title || path.basename(nextFile),
+//     artist: parsed.artist || 'Unknown Artist'
+//   };
+
+//   // Start playback logic here...
+// }
+
 function playNext() {
   if (playQueue.length === 0) {
     nowPlaying = null;
+    currentTrack = { title: 'No track playing', artist: '' }; // 🛠️ Clear currentTrack
     isPlaying = false;
     return;
   }
@@ -106,11 +173,19 @@ function playNext() {
   isPlaying = true;
   isPaused = false;
 
+  // 🧠 Extract metadata from filename
+  const parsed = parseTrackMetadata(nowPlaying); // You can define this function
+  currentTrack = {
+    title: parsed.title || path.basename(nowPlaying),
+    artist: parsed.artist || 'Unknown Artist'
+  };
+
+  console.log('🎶 Now playing:', currentTrack);
+
   const fullPath = path.join(MUSIC_DIR, nowPlaying);
   currentProcess = spawn('mplayer', ['-slave', '-quiet', fullPath]);
   currentProcess.stdin.setEncoding('utf-8');
 
-  // Detect successful playback
   currentProcess.stdout.on('data', data => {
     const output = data.toString();
     console.log('[MPlayer]', output);
@@ -120,14 +195,12 @@ function playNext() {
     }
   });
 
-  // Stderr listener for any error
   currentProcess.stderr.on('data', data => {
     const errorMsg = data.toString();
     console.error('🎧 MPlayer stderr:', errorMsg);
     lastPlaybackError = errorMsg;
   });
 
-  // Playback timeout handler
   setTimeout(() => {
     if (!playbackStarted) {
       lastPlaybackError = `No playback started within 5 seconds for ${nowPlaying}`;
@@ -142,6 +215,100 @@ function playNext() {
   });
 }
 
+// function playNext() {
+//   if (playQueue.length === 0) {
+//     nowPlaying = null;
+//     isPlaying = false;
+//     return;
+//   }
+
+//   lastPlaybackError = null;
+//   playbackStarted = false;
+//   nowPlaying = playQueue.shift();
+//   isPlaying = true;
+//   isPaused = false;
+
+//   const fullPath = path.join(MUSIC_DIR, nowPlaying);
+//   currentProcess = spawn('mplayer', ['-slave', '-quiet', fullPath]);
+//   currentProcess.stdin.setEncoding('utf-8');
+
+//   // Detect successful playback
+//   currentProcess.stdout.on('data', data => {
+//     const output = data.toString();
+//     console.log('[MPlayer]', output);
+
+//     if (output.includes('Starting playback')) {
+//       playbackStarted = true;
+//     }
+//   });
+
+//   // Stderr listener for any error
+//   currentProcess.stderr.on('data', data => {
+//     const errorMsg = data.toString();
+//     console.error('🎧 MPlayer stderr:', errorMsg);
+//     lastPlaybackError = errorMsg;
+//   });
+
+//   // Playback timeout handler
+//   setTimeout(() => {
+//     if (!playbackStarted) {
+//       lastPlaybackError = `No playback started within 5 seconds for ${nowPlaying}`;
+//       console.error('⏱️ Playback timeout:', lastPlaybackError);
+//     }
+//   }, 5000);
+
+//   currentProcess.on('exit', () => {
+//     currentProcess = null;
+//     isPlaying = false;
+//     playNext();
+//   });
+// }
+
+// save playlist to server
+/**
+ * Saves a JSON playlist to the server with the given name.
+ * @param {string} name - The filename (without extension).
+ * @param {Array} playlist - The playlist data as a JSON array.
+ */
+function savePlaylist(name, playlist) {
+  return new Promise((resolve, reject) => {
+    if (!name || !Array.isArray(playlist)) {
+      return reject(new Error('Invalid name or playlist'));
+    }
+
+    const dirPath = path.join(__dirname, 'playlists');
+    const filePath = path.join(dirPath, `${name}.json`);
+
+    // Ensure the playlists directory exists
+    fs.mkdir(dirPath, { recursive: true }, (mkdirErr) => {
+      if (mkdirErr) return reject(mkdirErr);
+
+      // Write the playlist file
+      fs.writeFile(filePath, JSON.stringify(playlist, null, 2), (writeErr) => {
+        if (writeErr) return reject(writeErr);
+        resolve();
+      });
+    });
+  });
+}
+
+// load playlist
+function loadPlaylist(name) {
+  return new Promise((resolve, reject) => {
+    const filePath = path.join(__dirname, 'playlists', `${name}.json`);
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+      if (err) return reject(err);
+
+      try {
+        const playlist = JSON.parse(data);
+        resolve(playlist);
+      } catch (parseErr) {
+        reject(parseErr);
+      }
+    });
+  });
+}
 
 
 // ****************************** END FUNCTIONS ********************************
@@ -155,7 +322,7 @@ process.on('exit', () => {
 });
 
 
-// get radio stations from JSON:
+// **********************************************get radio stations from JSON: ***************************************
 app.get('/stations', (req, res) => {
   const filePath = path.join(__dirname, 'stations.json');
     fs.readFile(filePath, 'utf8', (err, data) => {
@@ -224,10 +391,82 @@ app.get('/local-playback-status', (req, res) => {
 
 // playlist start
 app.post('/play-queue', (req, res) => {
-  if (!isPlaying && playQueue.length > 0) {
-    playNext(); // manually initiate playback
+  const sessionQueue = req.session.queue || [];
+
+  if (!isPlaying && sessionQueue.length > 0) {
+    playQueue = [...sessionQueue];
+    playNext();
+
+    // Delay redirect to allow currentTrack to update
+    setTimeout(() => {
+      res.redirect('/music');
+    }, 200); // 200ms gives playNext() time to update
+  } else {
+    res.redirect('/music');
   }
-  res.redirect('/music');
+});
+
+// get now playing
+app.get('/now-playing', (req, res) => {
+  res.json(currentTrack || { title: 'No track playing', artist: '' });
+});
+
+// get list of existing playlists
+app.get('/playlist/list', (req, res) => {
+  const dirPath = path.join(__dirname, 'playlists');
+
+  fs.readdir(dirPath, (err, files) => {
+    if (err) {
+      console.error('Error reading playlists:', err);
+      return res.status(500).json({ success: false, message: 'Failed to list playlists' });
+    }
+
+    const playlists = files
+      .filter(file => file.endsWith('.json'))
+      .map(file => file.replace('.json', ''));
+
+    res.json({ success: true, playlists });
+  });
+});
+
+// playlist save
+// POST route to save playlist
+app.post('/playlist/save', (req, res) => {
+  const name = req.body.name;
+  const playlist = req.session.queue || [];
+
+  if (!name || typeof name !== 'string' || playlist.length === 0) {
+    return res.status(400).send('Missing playlist name or empty queue');
+  }
+
+  savePlaylist(name, playlist)
+    .then(() => res.sendStatus(200))
+    .catch(err => {
+      console.error('Save failed:', err);
+      res.status(500).send('Failed to save playlist');
+    });
+  });
+
+// load playlist
+app.get('/load-playlist/:name', (req, res) => {
+  const name = req.params.name;
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ success: false, message: 'Invalid playlist name' });
+  }
+
+  loadPlaylist(name)
+    .then(playlist => {
+      if (!Array.isArray(playlist) || playlist.length === 0) {
+        return res.status(404).json({ success: false, message: 'Playlist is empty or invalid' });
+      }
+
+      req.session.queue = playlist;
+      res.json({ success: true });
+    })
+    .catch(err => {
+      console.error('Error loading playlist:', err);
+      res.status(500).json({ success: false, message: 'Failed to load playlist' });
+    });
 });
 
 // === System Routes ===
@@ -268,31 +507,70 @@ app.get('/music', (req, res) => {
 
   const isTrackView = entries.every(entry => !entry.isDir);
 
-  const currentTrack = nowPlaying
-    ? { artist: 'Unknown', title: nowPlaying }
-    : { artist: 'None', title: 'No track playing' };
-
+  // const currentTrack = nowPlaying
+  //   ? { artist: 'Unknown', title: nowPlaying }
+  //   : { artist: 'None', title: 'No track playing' };
+  let currentTrack = { title: 'No track playing', artist: '' };
+  
   res.render('index', {
     entries,
     dir,
     isTrackView,
-    queue: playQueue,
-    currentTrack
+    currentTrack,
+    queue: req.session.queue || [], // ✅ This line is critical
+    tempOutput: req.session.tempOutput || '',
+    playbackError: req.session.playbackError
   });
 });
 
+// back button in file browser
+app.get('/music/up', (req, res) => {
+  const currentRelDir = req.session.currentDir || ''; // e.g., 'rock/classics'
+  const parts = currentRelDir.split(path.sep).filter(Boolean); // ['rock', 'classics']
+
+  // Remove the last segment to go up one level
+  parts.pop();
+  const newRelDir = parts.join(path.sep); // e.g., 'rock'
+
+  req.session.currentDir = newRelDir;
+
+  const entries = getDirectoryView(newRelDir);
+  const isTrackView = entries.every(e => e.isAudio);
+
+  res.render('index', {
+    entries,
+    isTrackView,
+    currentTrack: req.session.currentTrack || { title: 'No track playing', artist: '' },
+    queue: req.session.queue || [],
+    tempOutput: req.session.tempOutput || '',
+    playbackError: req.session.playbackError
+  });
+});
+
+
+// add to queue
 app.get('/enqueue', (req, res) => {
   const file = req.query.file;
   if (!file) return res.status(400).send('Missing file param');
+
   const filePath = path.join(MUSIC_DIR, file);
 
   if (!filePath.startsWith(MUSIC_DIR) || !fs.existsSync(filePath)) {
     return res.status(400).send('Invalid file');
   }
 
+  // Add to session queue
+  if (!req.session.queue) {
+    req.session.queue = [];
+  }
+  req.session.queue.push(file);
+
+  // Enqueue for playback (your existing logic)
   enqueue(file);
+
   res.redirect('/music?dir=' + encodeURIComponent(path.dirname(file)));
 });
+
 
 app.post('/queue/remove/:index', (req, res) => {
   const idx = parseInt(req.params.index);
