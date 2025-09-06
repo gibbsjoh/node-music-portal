@@ -14,13 +14,6 @@
       margin-bottom: 20px;
     }
 
-    .controls button {
-    font-size: 1.75em; /* 75% larger than default (assuming 1em base) */
-    padding: 10px 20px; /* increased padding for better clickability */
-    border-radius: 6px; /* optional: slightly larger radius for visual harmony */
-  }
-
-
     .main-layout {
       display: flex;
       flex-wrap: wrap;
@@ -94,6 +87,9 @@ document.getElementById('backBtn').onclick = async () => {
   const result = await res.json();
   // Refresh your UI with result.contents
 };
+
+
+
 </script>
   <!-- 🔙 Back to Main Menu -->
   <div class="back-button">
@@ -102,71 +98,6 @@ document.getElementById('backBtn').onclick = async () => {
     </form>
   </div>
 
-<div style="margin-top: 1em;">
-  <h3>🎚 Volume Control</h3>
-  <form action="/volume/up" method="POST" style="display: inline;">
-    <button type="submit">🔊 Volume +</button>
-  </form>
-  <form action="/volume/down" method="POST" style="display: inline;">
-    <button type="submit">🔉 Volume -</button>
-  </form>
-</div>
-<div class="playlist-controls">
-  <!-- Save Playlist Button -->
-  <!-- <button id="saveBtn">💾 Save Playlist</button>
-  <button id="openBtn">📂 Open Playlist</button>
-  <form action="/play-queue" method="POST">
-    <button type="submit">▶️ Play Queue</button>
-  </form> -->
-</div>
-<script>
-document.getElementById('openBtn').onclick = async () => {
-  const name = prompt('Enter playlist name to load (without .json):');
-  if (name) {
-    const res = await fetch(`/load-playlist/${encodeURIComponent(name)}`);
-    const result = await res.json();
-    if (result.success) {
-      alert(`Loaded ${name} into queue!`);
-      // Refresh your queue UI here
-    } else {
-      alert(`Error: ${result.message}`);
-    }
-  }
-};
-</script>
-
-<script>
-document.getElementById('saveBtn').onclick = async () => {
-  const name = prompt('🎧 Enter a name for your playlist:');
-  if (name) {
-    const response = await fetch('/save-playlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name })
-    });
-
-    const result = await response.json();
-    alert(result.message || 'Playlist saved!');
-  }
-};
-</script>
-
-
-  <!-- 🎶 Now Playing -->
-  <div class="now-playing">
-    <h3>Now Playing</h3>
-  <p>
-    <%= currentTrack.artist %> - <%= currentTrack.title %>
-    <% if (currentTrack.title !== 'No track playing') { %>
-      <span class="playing-indicator"></span>
-    <% } %>
-  </p>
-  <p><strong>CPU Temp:</strong> <%= tempOutput %></p>
-  <div class="error-area">
-  <% if (currentTrack.title !== 'No track playing' && typeof playbackError !== 'undefined') { %>
-    <p class="error-msg">⚠️ <%= playbackError %></p>
-  <% } %>
-</div>
   <!-- 🔧 Playback Controls -->
 <div class="controls">
   <form action="/prev-track" method="POST" style="display:inline;">
@@ -177,12 +108,98 @@ document.getElementById('saveBtn').onclick = async () => {
   </form>
   <form action="/next-track" method="POST" style="display:inline;">
     <button>⏭️ Next</button>
-  </form><br>
-  <button id="saveBtn">💾 Save Playlist</button>
-  <button id="openBtn">📂 Open Playlist</button>
-  <form action="/play-queue" method="POST">
-    <button type="submit">▶️ Play Queue</button>
   </form>
+</div>
+<div style="margin-top: 1em;">
+  <h3>🎚 Volume Control</h3>
+  <form action="/volume/up" method="POST" style="display: inline;">
+    <button type="submit">🔊 Volume +</button>
+  </form>
+  <form action="/volume/down" method="POST" style="display: inline;">
+    <button type="submit">🔉 Volume -</button>
+  </form>
+</div>
+<div class="playlist-controls">
+  <!-- 💾 Save Playlist -->
+<button id="savePlaylistBtn">💾 Save Playlist</button>
+
+<!-- 📝 Playlist Name Dialog -->
+<div id="playlistDialog" style="display:none;">
+  <label for="playlistName">Enter playlist name:</label>
+  <input type="text" id="playlistName" />
+  <button id="confirmSaveBtn">✅ Save</button>
+  <button id="cancelSaveBtn">❌ Cancel</button>
+</div>
+
+</form>
+</div>
+
+<button id="openBtn">📂 Open Playlist</button>
+<div id="playlistSelector" style="display:none;">
+  <label for="playlistDropdown">Select a playlist:</label>
+  <select id="playlistDropdown"></select>
+  <button id="loadSelectedBtn">✅ Load</button>
+  <button id="cancelLoadBtn">❌ Cancel</button>
+</div>
+<form action="/play-queue" method="POST" onsubmit="setTimeout(() => location.reload(), 500);">
+  <button type="submit">▶️ Play Queue</button>
+</form>
+<script>
+
+  document.getElementById('openBtn').onclick = async () => {
+    const res = await fetch('/playlist/list');
+    const result = await res.json();
+    console.log("Generating dropdown")
+    if (result.success) {
+      const dropdown = document.getElementById('playlistDropdown');
+      dropdown.innerHTML = ''; // Clear previous options
+
+      result.playlists.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        dropdown.appendChild(option);
+      });
+
+      document.getElementById('playlistSelector').style.display = 'block';
+    } else {
+      alert('Failed to load playlist list');
+    }
+  };
+
+  document.getElementById('loadSelectedBtn').onclick = async () => {
+    const name = document.getElementById('playlistDropdown').value;
+    const res = await fetch(`/load-playlist/${encodeURIComponent(name)}`);
+    const result = await res.json();
+
+    if (result.success) {
+      alert(`Loaded ${name} into queue!`);
+      location.reload(); // Refresh to show updated queue
+    } else {
+      alert(`Error: ${result.message}`);
+    }
+  };
+
+  document.getElementById('cancelLoadBtn').onclick = () => {
+    document.getElementById('playlistSelector').style.display = 'none';
+  };
+</script>
+
+
+
+
+  <!-- 🎶 Now Playing -->
+ <div class="now-playing">
+  <h3>Now Playing</h3>
+  <p id="nowPlayingText">Loading...</p>
+  <span class="playing-indicator" style="display:none;"></span>
+</div>
+
+  <p><strong>CPU Temp:</strong> <%= tempOutput %></p>
+  <div class="error-area">
+  <% if (currentTrack.title !== 'No track playing' && typeof playbackError !== 'undefined') { %>
+    <p class="error-msg">⚠️ <%= playbackError %></p>
+  <% } %>
 </div>
 
   <!-- 🗂️ Main Layout -->
@@ -191,17 +208,20 @@ document.getElementById('saveBtn').onclick = async () => {
     <div class="track-list">
       <% if (isTrackView) { %>
         <h3>Tracks</h3>
-        <button id="backBtn">⬅️ Back</button>
-        <ul>
-          <% entries.forEach(entry => { %>
-            <li>
-              <%= entry.name %>
-              <form action="/enqueue" method="GET" style="display:inline;">
-                <input type="hidden" name="file" value="<%= entry.relPath %>">
-                <button class="enqueue-btn">➕ Add to Queue</button>
-              </form>
-            </li>
-          <% }) %>
+  <form action="/music/up" method="GET">
+    <button class="back-btn">⬅️ Back</button>
+  </form>
+  <ul>
+    <% entries.forEach(entry => { %>
+      <li>
+        <%= entry.name %>
+        <form action="/enqueue" method="GET" style="display:inline;">
+          <input type="hidden" name="file" value="<%= entry.relPath %>">
+          <button class="enqueue-btn">➕ Add to Queue</button>
+        </form>
+      </li>
+    <% }) %>
+  </ul>
         </ul>
       <% } else { %>
         <h3>Folders</h3>
@@ -232,6 +252,72 @@ document.getElementById('saveBtn').onclick = async () => {
       </ul>
     </div>
   </div>
+<script>
+  async function refreshNowPlaying() {
+  try {
+    const res = await fetch('/now-playing');
+    const track = await res.json();
 
+    const nowPlayingText = document.getElementById('nowPlayingText');
+    const indicator = document.querySelector('.playing-indicator');
+    console.log("Refreshing Now Playing");
+    nowPlayingText.innerText = `${track.artist} - ${track.title}`;
+
+    if (track.title !== 'No track playing') {
+      indicator.style.display = 'inline-block';
+      indicator.classList.add('active');
+    } else {
+      indicator.style.display = 'none';
+      indicator.classList.remove('active');
+    }
+  } catch (err) {
+    console.error('Failed to fetch now playing:', err);
+  }
+};
+
+setInterval(refreshNowPlaying, 5000);
+refreshNowPlaying();
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('openBtn').onclick = async () => {
+      const res = await fetch('/playlist/list');
+      const result = await res.json();
+      console.log("getting playlists...")
+
+      if (result.success) {
+        const dropdown = document.getElementById('playlistDropdown');
+        dropdown.innerHTML = ''; // Clear previous options
+
+        result.playlists.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          dropdown.appendChild(option);
+        });
+
+        document.getElementById('playlistSelector').style.display = 'block';
+      } else {
+        alert('Failed to load playlist list');
+      }
+    };
+
+    document.getElementById('loadSelectedBtn').onclick = async () => {
+      const name = document.getElementById('playlistDropdown').value;
+      const res = await fetch(`/load-playlist/${encodeURIComponent(name)}`);
+      const result = await res.json();
+
+      if (result.success) {
+        alert(`Loaded ${name} into queue!`);
+        location.reload();
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    };
+
+    document.getElementById('cancelLoadBtn').onclick = () => {
+      document.getElementById('playlistSelector').style.display = 'none';
+    };
+  });
+</script>
 </body>
 </html>
