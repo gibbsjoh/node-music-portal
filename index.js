@@ -6,6 +6,7 @@ const { spawn, exec } = require('child_process');
 const https = require('https');
 require('dotenv').config();
 const session = require('express-session');
+const os = require('os');
 
 // ********************************************** CONSTANTS ***************************************
 // ******* Configure Express ******
@@ -31,7 +32,9 @@ const sslOptions = {
 };
 
 // ******* Set music dir here! ******
-const MUSIC_DIR = '/home/pi/Music';
+// it has to be "Music" in the home dir
+const filePath = '~/Music';
+const MUSIC_DIR = path.resolve(filePath.replace('~', os.homedir()));
 
 
 // ******* WaveShare Pi UPS ******
