@@ -3,82 +3,7 @@
 <head>
   <title>Music Portal</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 20px;
-    }
-
-    .controls, .now-playing, .back-button {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .main-layout {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
-
-    .track-list, .queue-list {
-      width: 48%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    li {
-      margin: 5px 0;
-    }
-
-    .remove-btn, .enqueue-btn {
-      margin-left: 10px;
-      background-color: #007acc;
-      color: white;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .remove-btn:hover, .enqueue-btn:hover {
-      background-color: #005f99;
-    }
-
-    .back-button button {
-      background-color: #aaa;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .back-button button:hover {
-      background-color: #888;
-    }
-    @keyframes pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.6; }
-}
-
-.playing-indicator {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #4caf50;
-  animation: pulse 1s infinite;
-  margin-left: 8px;
-}
-
-  </style>
+  <link rel="stylesheet" type="text/css" href="/css/music.css" >
 </head>
 <body>
 <script>
@@ -87,10 +12,8 @@ document.getElementById('backBtn').onclick = async () => {
   const result = await res.json();
   // Refresh your UI with result.contents
 };
-
-
-
 </script>
+
   <!-- 🔙 Back to Main Menu -->
   <div class="back-button">
     <form action="/" method="GET">
@@ -99,7 +22,7 @@ document.getElementById('backBtn').onclick = async () => {
   </div>
 
   <!-- 🔧 Playback Controls -->
-<div class="controls">
+<div class=" box controls">
   <form action="/prev-track" method="POST" style="display:inline;">
     <button>⏮️ Previous</button>
   </form>
@@ -110,6 +33,7 @@ document.getElementById('backBtn').onclick = async () => {
     <button>⏭️ Next</button>
   </form>
 </div>
+<div class="box">
 <div style="margin-top: 1em;">
   <h3>🎚 Volume Control</h3>
   <form action="/volume/up" method="POST" style="display: inline;">
@@ -134,6 +58,7 @@ document.getElementById('backBtn').onclick = async () => {
 </form>
 </div>
 
+
 <button id="openBtn">📂 Open Playlist</button>
 <div id="playlistSelector" style="display:none;">
   <label for="playlistDropdown">Select a playlist:</label>
@@ -144,6 +69,7 @@ document.getElementById('backBtn').onclick = async () => {
 <form action="/play-queue" method="POST" onsubmit="setTimeout(() => location.reload(), 500);">
   <button type="submit">▶️ Play Queue</button>
 </form>
+</div>
 <script>
 
   document.getElementById('openBtn').onclick = async () => {
