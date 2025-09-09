@@ -5,73 +5,140 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" type="text/css" href="/css/music.css" >
 </head>
-<body>
-<script>
-document.getElementById('backBtn').onclick = async () => {
-  const res = await fetch('/go-back');
-  const result = await res.json();
-  // Refresh your UI with result.contents
-};
-</script>
 
-  <!-- 🔙 Back to Main Menu -->
-  <div class="back-button">
-    <form action="/" method="GET">
-      <button>⬅️ Back to Main Menu</button>
-    </form>
+<body>
+  <!-- 🎧 Header Section -->
+  <header class="header">
+    <!-- 🔙 Back to Main Menu -->
+    <div class="back-button">
+      <form action="/" method="GET">
+        <button>⬅️ Back to Main Menu</button>
+      </form>
+    </div>
+
+    <!-- 🔧 Playback Controls -->
+    <div class="box controls">
+      <form action="/prev-track" method="POST" style="display:inline;">
+        <button>⏮️ Previous</button>
+      </form>
+      <form action="/toggle-pause" method="GET" style="display:inline;">
+        <button>⏯️ Pause/Resume</button>
+      </form>
+      <form action="/next-track" method="POST" style="display:inline;">
+        <button>⏭️ Next</button>
+      </form>
+    </div>
+
+    <!-- 🔊 Volume & Playlist Controls -->
+    <div class="box">
+      <div style="margin-top: 1em;">
+        <h3>🎚 Volume Control</h3>
+        <form action="/volume/up" method="POST" style="display: inline;">
+          <button type="submit">🔊 Volume +</button>
+        </form>
+        <form action="/volume/down" method="POST" style="display: inline;">
+          <button type="submit">🔉 Volume -</button>
+        </form>
+      </div>
+
+      <div class="playlist-controls">
+        <!-- 💾 Save Playlist -->
+        <button id="savePlaylistBtn">💾 Save Playlist</button>
+
+        <!-- 📝 Playlist Name Dialog -->
+        <div id="playlistDialog" style="display:none;">
+          <label for="playlistName">Enter playlist name:</label>
+          <input type="text" id="playlistName" />
+          <button id="confirmSaveBtn">✅ Save</button>
+          <button id="cancelSaveBtn">❌ Cancel</button>
+        </div>
+      </div>
+
+      <!-- 📂 Open Playlist -->
+      <button id="openBtn">📂 Open Playlist</button>
+      <div id="playlistSelector" style="display:none;">
+        <label for="playlistDropdown">Select a playlist:</label>
+        <select id="playlistDropdown"></select>
+        <button id="loadSelectedBtn">✅ Load</button>
+        <button id="cancelLoadBtn">❌ Cancel</button>
+      </div>
+
+      <!-- ▶️ Play Queue -->
+      <form action="/play-queue" method="POST" onsubmit="setTimeout(() => location.reload(), 500);">
+        <button type="submit">▶️ Play Queue</button>
+      </form>
+    </div>
+
+    <!-- 🎶 Now Playing -->
+    <div class="now-playing">
+      <h3>Now Playing</h3>
+      <p id="nowPlayingText">Loading...</p>
+      <span class="playing-indicator" style="display:none;"></span>
+    </div>
+
+    <!-- 🌡️ CPU Temp & Errors -->
+    <p><strong>CPU Temp:</strong> <%= tempOutput %></p>
+    <div class="error-area">
+      <% if (currentTrack.title !== 'No track playing' && typeof playbackError !== 'undefined') { %>
+        <p class="error-msg">⚠️ <%= playbackError %></p>
+      <% } %>
+    </div>
+  </header>
+
+  <!-- 🗂️ Two-Column Main Layout -->
+  <div class="main-layout">
+    <!-- 🎵 Track List (Left Column) -->
+    <div class="track-list box">
+      <% if (isTrackView) { %>
+        <h3>Tracks</h3>
+        <form action="/music/up" method="GET">
+          <button class="back-btn">⬅️ Back</button>
+        </form>
+        <ul>
+          <% entries.forEach(entry => { %>
+            <li>
+              <%= entry.name %>
+              <form action="/enqueue" method="GET" style="display:inline;">
+                <input type="hidden" name="file" value="<%= entry.relPath %>">
+                <button class="enqueue-btn">➕ Add to Queue</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <h3>Folders</h3>
+        <ul>
+          <% entries.forEach(entry => { %>
+            <li>
+              <a href="/music?dir=<%= encodeURIComponent(entry.relPath) %>">
+                📁 <%= entry.name %>
+              </a>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </div>
+
+    <!-- 📋 Queue List (Right Column) -->
+    <div class="queue-list box">
+      <h3>Current Queue</h3>
+      <ul>
+        <% queue.forEach((track, index) => { %>
+          <li>
+            <%= track %>
+            <form action="/queue/remove/<%= index %>" method="POST" style="display:inline;">
+              <button class="remove-btn">🗑️ Remove</button>
+            </form>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
   </div>
 
-  <!-- 🔧 Playback Controls -->
-<div class=" box controls">
-  <form action="/prev-track" method="POST" style="display:inline;">
-    <button>⏮️ Previous</button>
-  </form>
-  <form action="/toggle-pause" method="GET" style="display:inline;">
-    <button>⏯️ Pause/Resume</button>
-  </form>
-  <form action="/next-track" method="POST" style="display:inline;">
-    <button>⏭️ Next</button>
-  </form>
-</div>
-<div class="box">
-<div style="margin-top: 1em;">
-  <h3>🎚 Volume Control</h3>
-  <form action="/volume/up" method="POST" style="display: inline;">
-    <button type="submit">🔊 Volume +</button>
-  </form>
-  <form action="/volume/down" method="POST" style="display: inline;">
-    <button type="submit">🔉 Volume -</button>
-  </form>
-</div>
-<div class="playlist-controls">
-  <!-- 💾 Save Playlist -->
-<button id="savePlaylistBtn">💾 Save Playlist</button>
 
-<!-- 📝 Playlist Name Dialog -->
-<div id="playlistDialog" style="display:none;">
-  <label for="playlistName">Enter playlist name:</label>
-  <input type="text" id="playlistName" />
-  <button id="confirmSaveBtn">✅ Save</button>
-  <button id="cancelSaveBtn">❌ Cancel</button>
-</div>
+  <script>
 
-</form>
-</div>
-
-
-<button id="openBtn">📂 Open Playlist</button>
-<div id="playlistSelector" style="display:none;">
-  <label for="playlistDropdown">Select a playlist:</label>
-  <select id="playlistDropdown"></select>
-  <button id="loadSelectedBtn">✅ Load</button>
-  <button id="cancelLoadBtn">❌ Cancel</button>
-</div>
-<form action="/play-queue" method="POST" onsubmit="setTimeout(() => location.reload(), 500);">
-  <button type="submit">▶️ Play Queue</button>
-</form>
-</div>
-<script>
-
+  
   document.getElementById('openBtn').onclick = async () => {
     const res = await fetch('/playlist/list');
     const result = await res.json();
@@ -109,76 +176,12 @@ document.getElementById('backBtn').onclick = async () => {
   document.getElementById('cancelLoadBtn').onclick = () => {
     document.getElementById('playlistSelector').style.display = 'none';
   };
-</script>
+  document.getElementById('backBtn').onclick = async () => {
+  const res = await fetch('/go-back');
+  const result = await res.json();
+  // Refresh your UI with result.contents
+};
 
-
-
-
-  <!-- 🎶 Now Playing -->
- <div class="now-playing">
-  <h3>Now Playing</h3>
-  <p id="nowPlayingText">Loading...</p>
-  <span class="playing-indicator" style="display:none;"></span>
-</div>
-
-  <p><strong>CPU Temp:</strong> <%= tempOutput %></p>
-  <div class="error-area">
-  <% if (currentTrack.title !== 'No track playing' && typeof playbackError !== 'undefined') { %>
-    <p class="error-msg">⚠️ <%= playbackError %></p>
-  <% } %>
-</div>
-
-  <!-- 🗂️ Main Layout -->
-  <div class="main-layout">
-    <!-- 🎵 Browse Section -->
-    <div class="track-list">
-      <% if (isTrackView) { %>
-        <h3>Tracks</h3>
-  <form action="/music/up" method="GET">
-    <button class="back-btn">⬅️ Back</button>
-  </form>
-  <ul>
-    <% entries.forEach(entry => { %>
-      <li>
-        <%= entry.name %>
-        <form action="/enqueue" method="GET" style="display:inline;">
-          <input type="hidden" name="file" value="<%= entry.relPath %>">
-          <button class="enqueue-btn">➕ Add to Queue</button>
-        </form>
-      </li>
-    <% }) %>
-  </ul>
-        </ul>
-      <% } else { %>
-        <h3>Folders</h3>
-        <ul>
-          <% entries.forEach(entry => { %>
-            <li>
-              <a href="/music?dir=<%= encodeURIComponent(entry.relPath) %>">
-                📁 <%= entry.name %>
-              </a>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
-    </div>
-
-    <!-- 📋 Playback Queue -->
-    <div class="queue-list">
-      <h3>Current Queue</h3>
-      <ul>
-        <% queue.forEach((track, index) => { %>
-          <li>
-            <%= track %>
-            <form action="/queue/remove/<%= index %>" method="POST" style="display:inline;">
-              <button class="remove-btn">🗑️ Remove</button>
-            </form>
-          </li>
-        <% }) %>
-      </ul>
-    </div>
-  </div>
-<script>
   async function refreshNowPlaying() {
   try {
     const res = await fetch('/now-playing');
@@ -247,3 +250,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
