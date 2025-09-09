@@ -27,17 +27,16 @@ li {
 /* === Main Layout Container === */
 .main-layout {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;        /* Ensure horizontal layout */
   justify-content: space-between;
+  gap: 20px;                  /* Optional: adds spacing between columns */
+  flex-wrap: wrap;           /* Allows wrapping on smaller screens */
 }
 
-/* === Track List & Queue List === */
 .track-list,
 .queue-list {
-  width: 48%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  flex: 1 1 48%;              /* Flex-grow, shrink, basis */
+  box-sizing: border-box;    /* Prevent overflow from padding */
 }
 
 /* === Box Styling (Shared by Track/Queue Lists) === */
@@ -45,7 +44,7 @@ li {
   border: 2px solid black;
   padding: 10px;
   margin: 20px;
-  display: inline-block;
+  
 }
 
 /* === Controls Section === */
