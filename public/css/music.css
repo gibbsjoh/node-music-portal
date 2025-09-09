@@ -1,72 +1,93 @@
-    body {
-      font-family: sans-serif;
-      margin: 20px;
-    }
-    .box {
-      border: 2px solid black; /* Width, style, and color of the border */
-      padding: 10px;          /* Space between content and border */
-      margin: 20px;           /* Space outside the border */
-      display: inline-block;
-    }
-    .controls, .now-playing, .back-button {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .main-layout {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-    }
-
-    .track-list, .queue-list {
-      width: 48%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    li {
-      margin: 5px 0;
-    }
-
-    .remove-btn, .enqueue-btn {
-      margin-left: 10px;
-      background-color: #007acc;
-      color: white;
-      border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .remove-btn:hover, .enqueue-btn:hover {
-      background-color: #005f99;
-    }
-
-    .back-button button {
-      background-color: #aaa;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .back-button button:hover {
-      background-color: #888;
-    }
-    @keyframes pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.6; }
+/* === Base Styles === */
+body {
+  font-family: sans-serif;
+  margin: 20px;
 }
 
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin: 5px 0;
+}
+
+/* === Header Section === */
+.header {
+  width: 100%;
+  background-color: #007acc;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* === Main Layout Container === */
+.main-layout {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+/* === Track List & Queue List === */
+.track-list,
+.queue-list {
+  width: 48%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+/* === Box Styling (Shared by Track/Queue Lists) === */
+.box {
+  border: 2px solid black;
+  padding: 10px;
+  margin: 20px;
+  display: inline-block;
+}
+
+/* === Controls Section === */
+.controls,
+.now-playing,
+.back-button {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* === Buttons === */
+.enqueue-btn,
+.remove-btn {
+  margin-left: 10px;
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.enqueue-btn:hover,
+.remove-btn:hover {
+  background-color: #005f99;
+}
+
+/* === Back Button Specific === */
+.back-button button {
+  background-color: #aaa;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.back-button button:hover {
+  background-color: #888;
+}
+
+/* === Now Playing Indicator === */
 .playing-indicator {
   display: inline-block;
   width: 12px;
@@ -75,4 +96,10 @@
   background-color: #4caf50;
   animation: pulse 1s infinite;
   margin-left: 8px;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.6; }
 }
