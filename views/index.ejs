@@ -47,6 +47,9 @@
 
 
       <div class="playlist-controls">
+        <form action="/queue/clear" method="POST">
+          <button type="submit" class="clear-btn">🧹 Clear Queue</button>
+        </form>
         <!-- 💾 Save Playlist -->
         <button id="savePlaylistBtn">💾 Save Playlist</button>
 
@@ -87,21 +90,39 @@
   <div class="main-layout">
     <!-- 🎵 Track List (Left Column) -->
     <div class="track-list box">
-      <% if (isTrackView) { %>
+      
+      <% if (typeof dir !== 'undefined' && dir !== '') { %>
         <h3>Tracks</h3>
         <form action="/music/up" method="GET">
-          <button class="back-btn">⬅️ Back</button>
+          <button id="backBtn" class="back-btn" >⬅️ Back</button>
         </form>
         <ul>
-          <% entries.forEach(entry => { %>
+        <% entries.forEach(entry => { %>
+          <% if (entry.isDir) { %>
+            <!-- Folder: link to navigate -->
+            <div class="entry folder">
+              <a href="/music?dir=<%= entry.relPath %>"><%= entry.name %></a>
+            </div>
+          <% } else { %>
+            <!-- File: form to enqueue -->
+            <div class="entry track">
+              <form action="/enqueue" method="POST">
+                <input type="hidden" name="track" value="<%= entry.relPath %>">
+                <button type="submit"><%= entry.name %></button>
+              </form>
+            </div>
+          <% } %>
+        <% }) %>
+
+          <!-- <% entries.forEach(entry => { %>
             <li>
               <%= entry.name %>
-              <form class="enqueue-form" action="/enqueue" method="GET" style="display:inline;">
+              <form class="enqueue-form" style="display:inline;">
                 <input type="hidden" name="file" value="<%= entry.relPath %>">
                 <button class="enqueue-btn">➕ Add to Queue</button>
               </form>
             </li>
-          <% }) %>
+          <% }) %> -->
         </ul>
       <% } else { %>
         <h3>Folders</h3>
@@ -137,13 +158,43 @@
   <script>
   
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded, starting polling...');
+    setTimeout(refreshNowPlaying, 300);
+    setInterval(refreshNowPlaying, 5000);
+  });
+
+  async function refreshNowPlaying() {
+    try {
+      const res = await fetch('/now-playing');
+      const track = await res.json();
+
+      const nowPlayingText = document.getElementById('nowPlayingText');
+      const indicator = document.querySelector('.playing-indicator');
+
+      if (!nowPlayingText) return console.warn('nowPlayingText not found');
+
+      nowPlayingText.innerText = `${track.artist} - ${track.title}`;
+
+      if (track.title !== 'No track playing') {
+        indicator.style.display = 'inline-block';
+        indicator.classList.add('active');
+      } else {
+        indicator.style.display = 'none';
+        indicator.classList.remove('active');
+      }
+    } catch (err) {
+      console.error('Failed to fetch now playing:', err);
+    }
     document.querySelectorAll('.enqueue-form').forEach(form => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const formData = new FormData(form);
-      const params = new URLSearchParams(formData).toString();
-      const url = `${form.action}?${params}`;
+      const url = new URL('/enqueue', window.location.origin);
+
+      for (const [key, value] of formData.entries()) {
+        url.searchParams.append(key, value);
+      }
 
       try {
         const res = await fetch(url);
@@ -161,7 +212,6 @@
     });
 });
 
-  });
 
   async function refreshQueueList() {
   try {
@@ -190,6 +240,18 @@
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  const backBtn = document.getElementById('backBtn');
+  if (backBtn) {
+    backBtn.onclick = async () => {
+      const res = await fetch('/go-back');
+      const result = await res.json();
+      // Refresh your UI with result.contents
+    };
+  } else {
+    console.warn('Back button not found in DOM');
+  }
+});
   
   document.getElementById('openBtn').onclick = async () => {
     const res = await fetch('/playlist/list');
@@ -233,31 +295,62 @@
   const result = await res.json();
   // Refresh your UI with result.contents
 };
+// document.addEventListener('DOMContentLoaded', () => {
+//     console.log('DOM fully loaded, starting polling...');
+//     setTimeout(refreshNowPlaying, 300);
+//     setInterval(refreshNowPlaying, 5000);
+//   });
 
-  async function refreshNowPlaying() {
-  try {
-    const res = await fetch('/now-playing');
-    const track = await res.json();
+//   async function refreshNowPlaying() {
+//     try {
+//       const res = await fetch('/now-playing');
+//       const track = await res.json();
 
-    const nowPlayingText = document.getElementById('nowPlayingText');
-    const indicator = document.querySelector('.playing-indicator');
-    console.log("Refreshing Now Playing");
-    nowPlayingText.innerText = `${track.artist} - ${track.title}`;
+//       const nowPlayingText = document.getElementById('nowPlayingText');
+//       const indicator = document.querySelector('.playing-indicator');
 
-    if (track.title !== 'No track playing') {
-      indicator.style.display = 'inline-block';
-      indicator.classList.add('active');
-    } else {
-      indicator.style.display = 'none';
-      indicator.classList.remove('active');
-    }
-  } catch (err) {
-    console.error('Failed to fetch now playing:', err);
-  }
-};
+//       if (!nowPlayingText) return console.warn('nowPlayingText not found');
 
-setInterval(refreshNowPlaying, 5000);
-refreshNowPlaying();
+//       nowPlayingText.innerText = `${track.artist} - ${track.title}`;
+
+//       if (track.title !== 'No track playing') {
+//         indicator.style.display = 'inline-block';
+//         indicator.classList.add('active');
+//       } else {
+//         indicator.style.display = 'none';
+//         indicator.classList.remove('active');
+//       }
+//     } catch (err) {
+//       console.error('Failed to fetch now playing:', err);
+//     }
+//   }
+//   async function refreshNowPlaying() {
+//   try {
+//     const res = await fetch('/now-playing');
+//     const track = await res.json();
+
+//     const nowPlayingText = document.getElementById('nowPlayingText');
+//     const indicator = document.querySelector('.playing-indicator');
+//     console.log("Refreshing Now Playing");
+//     console.log('Frontend received track:', track);
+//     nowPlayingText.innerText = `${track.artist} - ${track.title}`;
+
+//     if (track.title !== 'No track playing') {
+//       indicator.style.display = 'inline-block';
+//       indicator.classList.add('active');
+//     } else {
+//       indicator.style.display = 'none';
+//       indicator.classList.remove('active');
+//     }
+//   } catch (err) {
+//     console.error('Failed to fetch now playing:', err);
+//   }
+// };
+// document.addEventListener('DOMContentLoaded', () => {
+//   console.log('DOM fully loaded, starting polling...');
+//   setTimeout(refreshNowPlaying, 300); // Let backend settle
+//   setInterval(refreshNowPlaying, 5000);
+// });
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('openBtn').onclick = async () => {
@@ -298,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cancelLoadBtn').onclick = () => {
       document.getElementById('playlistSelector').style.display = 'none';
     };
-  });
+  })};
 </script>
 </body>
 </html>

@@ -52,6 +52,7 @@ let nowPlaying = null;
 let isPlaying = false;
 let isPaused = false;
 let currentProcess = null;
+let currentTrack = { title: 'No track playing', artist: '' };
 
 let lastPlaybackError = null;
 let playbackStarted = false;
@@ -164,6 +165,7 @@ function parseTrackMetadata(filename) {
 
 function playNext() {
   if (playQueue.length === 0) {
+    console.log('playNext triggered. Queue:', playQueue);
     nowPlaying = null;
     currentTrack = { title: 'No track playing', artist: '' }; // 🛠️ Clear currentTrack
     isPlaying = false;
@@ -405,12 +407,13 @@ app.post('/play-queue', (req, res) => {
       res.redirect('/music');
     }, 200); // 200ms gives playNext() time to update
   } else {
-    res.redirect('/music');
+    return res.redirect('/music');
   }
 });
 
 // get now playing
 app.get('/now-playing', (req, res) => {
+  console.log('Now playing route hit:', currentTrack);
   res.json(currentTrack || { title: 'No track playing', artist: '' });
 });
 
@@ -552,34 +555,80 @@ app.get('/music/up', (req, res) => {
 
 
 // add to queue
-app.get('/enqueue', (req, res) => {
-  const file = req.query.file;
-  if (!file) return res.status(400).send('Missing file param');
-
-  const filePath = path.join(MUSIC_DIR, file);
-
-  if (!filePath.startsWith(MUSIC_DIR) || !fs.existsSync(filePath)) {
-    return res.status(400).send('Invalid file');
+app.post('/enqueue', express.urlencoded({ extended: true }), (req, res) => {
+  const track = req.body.track;
+  if (!track) {
+    return res.status(400).send('No track specified');
   }
 
-  // Add to session queue
   if (!req.session.queue) {
     req.session.queue = [];
   }
-  req.session.queue.push(file);
 
-  // Enqueue for playback (your existing logic)
-  enqueue(file);
+  req.session.queue.push(track);
+  console.log('Track enqueued:', track);
 
-  res.redirect('/music?dir=' + encodeURIComponent(path.dirname(file)));
-  res.json({ success: true, track: file }); // Respond with success
+  // Redirect back to current folder view
+  const currentDir = path.dirname(track);
+  res.redirect(`/music?dir=${currentDir}`);
+});
+/////
+// app.get('/enqueue', (req, res) => {
+//   const file = req.query.file;
+
+//   if (!file) return res.status(400).json({ success: false, message: 'Missing file param' });
+
+//   const filePath = path.join(MUSIC_DIR, file);
+//   if (!filePath.startsWith(MUSIC_DIR) || !fs.existsSync(filePath)) {
+//     return res.status(400).json({ success: false, message: 'Invalid file' });
+//   }
+
+//   // Add to session queue
+//   if (!req.session.queue) {
+//     req.session.queue = [];
+//   }
+//   req.session.queue.push(file);
+
+//   // Enqueue for playback (your existing logic)
+//   enqueue(file);
+
+//   //res.redirect('/music?dir=' + encodeURIComponent(path.dirname(file)));
+//   res.json({ success: true, track: file }); // Respond with success
+// });
+
+// queue route to refresh queue
+app.get('/queue', (req, res) => {
+  res.json({
+    success: true,
+    queue: req.session.queue || []
+  });
 });
 
+// clear queue route
+app.post('/queue/clear', (req, res) => {
+  playQueue = [];
+  req.session.queue = [];
+  console.log('Queue cleared');
+  res.redirect('/music');
+});
+
+// app.post('/queue/remove/:index', (req, res) => {
+//   const idx = parseInt(req.params.index);
+//   if (!isNaN(idx) && idx >= 0 && idx < playQueue.length) {
+//     playQueue.splice(idx, 1);
+//   }
+//   res.redirect('/music');
+// });
 
 app.post('/queue/remove/:index', (req, res) => {
   const idx = parseInt(req.params.index);
-  if (!isNaN(idx) && idx >= 0 && idx < playQueue.length) {
-    playQueue.splice(idx, 1);
+  if (!isNaN(idx)) {
+    if (idx >= 0 && idx < playQueue.length) {
+      playQueue.splice(idx, 1);
+    }
+    if (req.session.queue && idx < req.session.queue.length) {
+      req.session.queue.splice(idx, 1);
+    }
   }
   res.redirect('/music');
 });
