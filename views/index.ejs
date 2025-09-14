@@ -15,7 +15,12 @@
         <button>⬅️ Back to Main Menu</button>
       </form>
     </div>
-
+    <!-- 🎶 Now Playing -->
+    <div class="now-playing">
+      <h3>Now Playing</h3>
+      <p id="nowPlayingText">Loading...</p>
+      <span class="playing-indicator" style="display:none;"></span>
+    </div>
     <!-- 🔧 Playback Controls -->
     <div class="box controls">
       <form action="/prev-track" method="POST" style="display:inline;">
@@ -69,13 +74,6 @@
       </form>
     </div>
 
-    <!-- 🎶 Now Playing -->
-    <div class="now-playing">
-      <h3>Now Playing</h3>
-      <p id="nowPlayingText">Loading...</p>
-      <span class="playing-indicator" style="display:none;"></span>
-    </div>
-
     <!-- 🌡️ CPU Temp & Errors -->
     <p><strong>CPU Temp:</strong> <%= tempOutput %></p>
     <div class="error-area">
@@ -98,7 +96,7 @@
           <% entries.forEach(entry => { %>
             <li>
               <%= entry.name %>
-              <form action="/enqueue" method="GET" style="display:inline;">
+              <form class="enqueue-form" action="/enqueue" method="GET" style="display:inline;">
                 <input type="hidden" name="file" value="<%= entry.relPath %>">
                 <button class="enqueue-btn">➕ Add to Queue</button>
               </form>
@@ -137,6 +135,60 @@
 
 
   <script>
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.enqueue-form').forEach(form => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const params = new URLSearchParams(formData).toString();
+      const url = `${form.action}?${params}`;
+
+      try {
+        const res = await fetch(url);
+        const result = await res.json();
+
+        if (result.success) {
+          console.log('Track enqueued:', result.track);
+          refreshQueueList(); // ✅ Call frontend function to update queue
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (err) {
+        console.error('Enqueue failed:', err);
+      }
+    });
+});
+
+  });
+
+  async function refreshQueueList() {
+  try {
+    const res = await fetch('/queue');
+    const result = await res.json();
+
+    if (result.success) {
+      const queueList = document.querySelector('.queue-list ul');
+      queueList.innerHTML = ''; // Clear current list
+
+      result.queue.forEach((track, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          ${track}
+          <form action="/queue/remove/${index}" method="POST" style="display:inline;">
+            <button class="remove-btn">🗑️ Remove</button>
+          </form>
+        `;
+        queueList.appendChild(li);
+      });
+    } else {
+      console.error('Failed to refresh queue:', result.message);
+    }
+  } catch (err) {
+    console.error('Error fetching queue:', err);
+  }
+}
 
   
   document.getElementById('openBtn').onclick = async () => {

@@ -572,6 +572,7 @@ app.get('/enqueue', (req, res) => {
   enqueue(file);
 
   res.redirect('/music?dir=' + encodeURIComponent(path.dirname(file)));
+  res.json({ success: true, track: file }); // Respond with success
 });
 
 

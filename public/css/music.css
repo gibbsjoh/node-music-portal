@@ -30,7 +30,7 @@ li {
   flex-direction: row;        /* Ensure horizontal layout */
   justify-content: space-between;
   gap: 20px;                  /* Optional: adds spacing between columns */
-  flex-wrap: wrap;           /* Allows wrapping on smaller screens */
+  flex-wrap: nowrap;           /* Allows wrapping on smaller screens */
 }
 
 .track-list,
@@ -41,7 +41,7 @@ li {
 
 /* === Box Styling (Shared by Track/Queue Lists) === */
 .box {
-  border: 2px solid black;
+  border: 1px solid black;
   padding: 10px;
   margin: 20px;
   
