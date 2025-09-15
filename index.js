@@ -188,7 +188,7 @@ function playNext() {
   console.log('🎶 Now playing:', currentTrack);
 
   const fullPath = path.join(MUSIC_DIR, nowPlaying);
-  currentProcess = spawn('mplayer', ['-slave', '-quiet', fullPath]);
+  currentProcess = spawn('mplayer', ['-vo', '/dev/null', '-slave', '-quiet', fullPath]);
   currentProcess.stdin.setEncoding('utf-8');
 
   currentProcess.stdout.on('data', data => {
