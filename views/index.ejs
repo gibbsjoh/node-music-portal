@@ -54,7 +54,7 @@
         <button id="savePlaylistBtn">💾 Save Playlist</button>
 
         <!-- 📝 Playlist Name Dialog -->
-        <div id="playlistDialog" style="display:none;">
+        <div id="playlistDialog" style="display:none;" >
           <label for="playlistName">Enter playlist name:</label>
           <input type="text" id="playlistName" />
           <button id="confirmSaveBtn">✅ Save</button>
@@ -184,7 +184,8 @@
       }
     } catch (err) {
       console.error('Failed to fetch now playing:', err);
-    }
+    }};
+
     document.querySelectorAll('.enqueue-form').forEach(form => {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -272,6 +273,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       alert('Failed to load playlist list');
     }
+  };
+
+  document.getElementById('savePlaylistBtn').onclick = async () => {
+    document.getElementById('playlistDialog').style.display = 'block';
   };
 
   document.getElementById('loadSelectedBtn').onclick = async () => {
@@ -388,10 +393,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
+  document.getElementById('confirmSaveBtn').onclick = async () => {
+    const name = document.getElementById('playlistName').value;
+    console.log("Saving");
+    if (name) {
+      const response = await fetch('/playlist/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+
+      const result = await response;
+      alert('Playlist saved!');
+    }
+  };
+
+
     document.getElementById('cancelLoadBtn').onclick = () => {
       document.getElementById('playlistSelector').style.display = 'none';
     };
-  })};
+  });
 </script>
 </body>
 </html>
